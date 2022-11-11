@@ -333,7 +333,6 @@ async function wasd({ filePath, port, verbose }) {
         const line = await q.getNextLine();
         lineCounter++;
         m.sendCommand(line, lineCounter);
-        console.log('!!!!!!!!', q.buffer);
       }
 
       // if (!q.hasMoreLines()) {
