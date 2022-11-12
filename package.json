@@ -9,6 +9,9 @@
   },
   "author": "",
   "license": "ISC",
+  "bin": {
+    "grbl-cli": "./index.js"
+  },
   "devDependencies": {
     "eslint": "^8.27.0",
     "eslint-config-prettier": "^8.5.0",

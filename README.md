@@ -18,6 +18,7 @@ A WIP CLI way to send files to your GRBL machine. Clone, `npm install`, and run 
 - clean up
   - remove all the state variables from Machine and FileLinesQueue
   - better status parsing
+  - [x] move dictionary files out of the main file
 - initial and final gcode steps
 - tests
   - unit
@@ -29,3 +30,7 @@ A WIP CLI way to send files to your GRBL machine. Clone, `npm install`, and run 
 - config file
 - global npm module and/or executables
 - migrate to TS/Deno
+- accept input from STDIN
+- wait timer
+- multiple files
+- parse status
