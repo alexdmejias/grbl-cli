@@ -34,3 +34,5 @@ A WIP CLI way to send files to your GRBL machine. Clone, `npm install`, and run 
 - wait timer
 - multiple files
 - parse status
+- flag to toggle "check g-code mode" https://github.com/gnea/grbl/blob/master/doc/markdown/interface.md#g-code-error-handling
+- interactive mode incase no port is sent
