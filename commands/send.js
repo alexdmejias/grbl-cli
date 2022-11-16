@@ -2,6 +2,7 @@ const chalk = require('chalk');
 const { exit } = require('process');
 
 const { Machine } = require('../machine');
+const { LinesBuffer } = require('../linesbuffer');
 const { RUN_HOMING_CYCLE } = require('../commands');
 const { isOkRes, isStatusRes } = require('../responseParsing');
 const {
@@ -19,19 +20,21 @@ exports.send = async ({ filePath, port, verbose }) => {
 
   const [serialPort, parser] = await getPort(port);
   const m = new Machine({
-    file: filePath,
     port: serialPort,
-    verbose,
-    initCommands: ['??', RUN_HOMING_CYCLE],
-    endCommands: [
-      /* 'G91 X10' */
-    ]
+    verbose
   });
 
-  await m.fillBuffer();
+  const lb = new LinesBuffer({
+    initCommands: ['?', RUN_HOMING_CYCLE],
+    endCommands: [
+      /* 'G91 X10' */
+    ],
+    files: filePath
+  });
+  await lb.fillBuffer();
+
   let jobStartTime;
   let lineCounter = 0;
-  let commandsBuffer = m.getCommand();
 
   // let prevCodeBlock;
   let shouldWaitForNextOk = false;
@@ -62,7 +65,7 @@ exports.send = async ({ filePath, port, verbose }) => {
       return;
     }
 
-    const nextGcodeLine = commandsBuffer.next();
+    const nextGcodeLine = lb.advance();
 
     // initiate a timer to keep sending status requests
     // if (!reportSenderInterval) {
@@ -71,15 +74,15 @@ exports.send = async ({ filePath, port, verbose }) => {
     //   }, 250);
     // }
 
-    if (isBlockingLine(line) || nextGcodeLine.done) {
+    if (isBlockingLine(line) || lb.done()) {
       clearInterval(reportSenderInterval);
 
-      if (nextGcodeLine.done) {
+      if (lb.done()) {
         console.log('!!!!!!!!', 'ran out of gcode');
       } else {
         console.log('!!!!!!!!', 'found blocking line');
       }
-      commandsBuffer.return();
+      lb.clearBuffer();
 
       console.log(`job ran for: ${getJobDuration(jobStartTime)}`);
       exit(0);
@@ -87,14 +90,16 @@ exports.send = async ({ filePath, port, verbose }) => {
 
     // shouldWaitForNextOk()?
 
-    setTimeout(() => {
-      if (!shouldWaitForNextOk) {
-        m.sendCommand(nextGcodeLine.value);
-      }
-    }, 100);
+    // setTimeout(() => {
+    if (!shouldWaitForNextOk) {
+      m.sendCommand(nextGcodeLine);
+      shouldWaitForNextOk = true;
+      console.log('!!!!!!!!1', 'shouldWaitForNextOk now set to TRUE because line:', nextGcodeLine);
+    }
+    // }, 100);
 
-    if (getShouldWaitForNextOk(nextGcodeLine.value)) {
-      console.log('!!!!!!!!', 'shouldWaitForNextOk set to TRUE');
+    if (getShouldWaitForNextOk(nextGcodeLine)) {
+      console.log('!!!!!!!!', 'shouldWaitForNextOk now set to TRUE');
       shouldWaitForNextOk = true;
       // } else {
       //   shouldWaitForNextOk = false;

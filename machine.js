@@ -1,7 +1,6 @@
-const fs = require('fs/promises');
-const chalk = require('chalk');
-
 const { stderr, stdout } = require('process');
+
+const chalk = require('chalk');
 
 const { ALARM_DICTIONARY, ERROR_DICTIONARY, GRBL_SETTINGS } = require('./dictionaries');
 const {
@@ -18,12 +17,10 @@ const { parseStatusMessage } = require('./utils');
 class Machine {
   constructor({ port, verbose, initCommands, endCommands, file }) {
     this.port = port;
-    this.file = file;
     this.verbose = verbose;
     this.initCommands = initCommands;
     this.endCommands = endCommands;
 
-    this.fileBuffer = [];
     this.isOk = false;
     this.isReady = false;
     this.isDone = false;
@@ -37,15 +34,6 @@ class Machine {
     this.machineState = {};
   }
 
-  *getCommand() {
-    this.currentGCodeBlock = 'INIT';
-    yield* this.initCommands;
-    this.currentGCodeBlock = 'FILE';
-    yield* this.fileBuffer;
-    this.currentGCodeBlock = 'FINAL';
-    yield* this.endCommands;
-  }
-
   sendCommand(command) {
     if (this.verbose && !isStatusCmd(command))
       console.log(chalk.red('MACHINE::TX::', 'sendCommand', command));
@@ -54,10 +42,6 @@ class Machine {
   }
 
   resetState() {}
-
-  async fillBuffer() {
-    this.fileBuffer = (await fs.readFile(this.file, 'utf-8')).split('\n');
-  }
 
   removeLineFromBuffer() {
     this.fileBuffer.shift();
