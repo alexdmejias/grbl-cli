@@ -53,15 +53,17 @@ exports.send = async ({ filePath, port, verbose }) => {
       jobStartTime = new Date();
     }
 
-    if (isOkRes(line)) {
-      console.log('!!!!!!!!', 'shouldWaitForNextOk set to FALSE');
+    if (isOkRes(line) && shouldWaitForNextOk) {
+      console.log('!!!!!!!!', 'shouldWaitForNextOk now set to FALSE');
       shouldWaitForNextOk = false;
     }
 
     m.parseMessage(line, lineCounter);
 
     if (shouldWaitForNextOk) {
-      console.log('!!!!!!!!', 'shouldWaitForNextOk is TRUE so ignoring the received line', line);
+      if (!isStatusRes(line)) {
+        console.log('!!!!!!!!', 'shouldWaitForNextOk is TRUE so ignoring the received line', line);
+      }
       return;
     }
 
