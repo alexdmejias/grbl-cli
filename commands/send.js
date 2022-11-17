@@ -3,16 +3,60 @@ const { exit } = require('process');
 
 const { Machine } = require('../machine');
 const { LinesBuffer } = require('../linesbuffer');
-const { RUN_HOMING_CYCLE } = require('../commands');
-const { isOkRes, isStatusRes } = require('../responseParsing');
+const { RUN_HOMING_CYCLE, SOFT_RESET } = require('../commands');
 const {
-  isBlockingLine,
-  getJobDuration,
-  getShouldWaitForNextOk,
-  validateFile,
-  validatePort,
-  getPort
-} = require('../utils');
+  isOkRes,
+  isWelcomeRes,
+  isStatusRes,
+  isMessageRes,
+  isAlarmRes,
+  isErrorRes
+} = require('../responseParsing');
+const { validateFile, validatePort, getPort, parseStatusMessage } = require('../utils');
+
+const { fromEvent, scan, filter, tap, share } = require('rxjs');
+
+function parseMsg(line) {
+  if (isOkRes(line)) {
+    let a = { isOk: true };
+    return a;
+  }
+
+  if (isWelcomeRes(line)) {
+    return { isWelcome: true };
+  }
+
+  if (isMessageRes(line)) {
+    if (line === `[MSG:'$H'|'$X' to unlock]`) {
+      return { isLocked: true, isOk: false };
+    } else {
+      return {};
+    }
+  }
+
+  if (isAlarmRes(line)) {
+    return { isOk: false, isAlarm: true, killReason: 'alarm' };
+  }
+
+  if (isErrorRes(line)) {
+    return { isOk: false, isError: true, killReason: 'error' };
+  }
+
+  if (isStatusRes(line)) {
+    return parseStatusMessage(line);
+  }
+}
+
+function startKillSequence(ob$, sendCommand, reason = 'unclear') {
+  console.log(chalk.bgRed.bold.white('self destruction sequence because:', reason));
+
+  exit(0);
+  console.log(chalk.bgRed.bold.white('sending soft reset command'));
+  // sendCommand(SOFT_RESET);
+  console.log(chalk.bgRed.bold.white('unsubscribing from oberserver'));
+  ob$.unsubscribe();
+  console.log(chalk.bgRed.bold.white('sending exit command'));
+}
 
 exports.send = async ({ filePath, port, verbose }) => {
   await validateFile(filePath);
@@ -25,95 +69,57 @@ exports.send = async ({ filePath, port, verbose }) => {
   });
 
   const lb = new LinesBuffer({
-    initCommands: ['?', RUN_HOMING_CYCLE],
-    endCommands: [
-      /* 'G91 X10' */
-    ],
+    initCommands: ['?', SOFT_RESET, RUN_HOMING_CYCLE],
+    endCommands: ['G91 X10'],
     files: filePath
   });
   await lb.fillBuffer();
 
-  let jobStartTime;
-  let lineCounter = 0;
+  const source = fromEvent(parser, 'data');
+  const multicasted$ = source.pipe(share());
 
-  // let prevCodeBlock;
-  let shouldWaitForNextOk = false;
-  let reportSenderInterval;
-
-  parser.on('data', async (line) => {
-    if (verbose) {
-      if (isStatusRes(line)) {
-        console.log(chalk.gray(line));
-      } else {
-        console.log(chalk.green('RX::', line));
-      }
-    }
-
-    if (!jobStartTime) {
-      jobStartTime = new Date();
-    }
-
-    if (isOkRes(line) && shouldWaitForNextOk) {
-      console.log('!!!!!!!!', 'shouldWaitForNextOk now set to FALSE');
-      shouldWaitForNextOk = false;
-    }
-
-    m.parseMessage(line, lineCounter);
-
-    if (shouldWaitForNextOk) {
-      if (!isStatusRes(line)) {
-        console.log('!!!!!!!!', 'shouldWaitForNextOk is TRUE so ignoring the received line', line);
-      }
-      return;
-    }
-
-    const nextGcodeLine = lb.advance();
-
-    // initiate a timer to keep sending status requests
-    // if (!reportSenderInterval) {
-    //   reportSenderInterval = setInterval(() => {
-    //     m.sendCommand(STATUS);
-    //   }, 250);
-    // }
-
-    if (isBlockingLine(line) || lb.done()) {
-      clearInterval(reportSenderInterval);
-
-      if (lb.done()) {
-        console.log('!!!!!!!!', 'ran out of gcode');
-      } else {
-        console.log('!!!!!!!!', 'found blocking line');
-      }
-      lb.clearBuffer();
-
-      console.log(`job ran for: ${getJobDuration(jobStartTime)}`);
-      exit(0);
-    }
-
-    // shouldWaitForNextOk()?
-
-    // setTimeout(() => {
-    if (!shouldWaitForNextOk) {
-      m.sendCommand(nextGcodeLine);
-      shouldWaitForNextOk = true;
-      console.log('!!!!!!!!1', 'shouldWaitForNextOk now set to TRUE because line:', nextGcodeLine);
-    }
-    // }, 100);
-
-    if (getShouldWaitForNextOk(nextGcodeLine)) {
-      console.log('!!!!!!!!', 'shouldWaitForNextOk now set to TRUE');
-      shouldWaitForNextOk = true;
-      // } else {
-      //   shouldWaitForNextOk = false;
-    }
-
-    // if (prevCodeBlock !== m.currentGCodeBlock) {
-    //   lineCounter = 0;
-    // } else {
-    //   lineCounter++;
-    // }
-
-    // prevCodeBlock = m.currentGCodeBlock;
-    // }
+  multicasted$.pipe(filter(isStatusRes)).subscribe((line) => {
+    console.log(chalk.bold.gray(line));
   });
+
+  const ob$ = multicasted$
+    .pipe(
+      filter((line) => !isStatusRes(line)),
+      tap((line) => {
+        console.log(chalk.green('RX::', line));
+      }),
+      scan((acc, curr) => Object.assign({}, acc, parseMsg(curr)), {}),
+      tap((state) => {
+        if (state.killReason || state.isError) {
+          startKillSequence(ob$, m.sendCommand, state.killReason || 'unknown reason');
+        } else if (lb.done()) {
+          startKillSequence(ob$, m.sendCommand, 'DONE');
+        }
+      }),
+      tap((parsedLine) => {
+        m.setMachineState(parsedLine);
+      }),
+      tap((state) => {
+        if (state.isOk && m.hasPendingSideEffects()) {
+          m.applyPendingSideEffects();
+        }
+      })
+    )
+    .subscribe({
+      next: (event) => {
+        // console.log(chalk.gray(JSON.stringify(event)));
+
+        // TODO is this needed? it's not getting used
+        if (event.isWelcome && event.isError && event.isAlarm) {
+          startKillSequence(ob$, m.sendCommand, '1');
+        } else {
+          const gcodeToSend = lb.advance();
+          m.sendCommand(gcodeToSend);
+        }
+      },
+      error: (error) => startKillSequence(ob$, m.sendCommand, `error: ${error}`),
+      complete: () => {
+        startKillSequence(ob$, m.sendCommand, 'COMPLETE');
+      }
+    });
 };

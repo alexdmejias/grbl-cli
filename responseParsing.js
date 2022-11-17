@@ -1,7 +1,19 @@
-const { STATUS } = require('./commands');
+const { STATUS, RUN_HOMING_CYCLE } = require('./commands');
 
 exports.isStatusCmd = (cmd) => {
   return cmd === STATUS;
+};
+
+exports.isHomingCmd = (cmd) => {
+  return cmd === RUN_HOMING_CYCLE;
+};
+
+exports.isComment = (cmd) => {
+  return [';', '('].includes(cmd.trim()[0]);
+};
+
+exports.isWelcomeRes = (line) => {
+  return line === `Grbl 1.1h ['$' for help]`;
 };
 
 exports.isOkRes = (line) => {
@@ -12,8 +24,8 @@ exports.isGCodeDoneRes = (line) => {
   return line === '[MSG:Pgm End]';
 };
 
-exports.isReadyRes = (line) => {
-  return line === `Grbl 1.1h ['$' for help]`;
+exports.isMessageRes = (line) => {
+  return line.slice(0, 5) === '[MSG:' && line.at(-1) === ']';
 };
 
 exports.isStatusRes = (line) => {

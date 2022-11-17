@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node index.js send -p /dev/tty.usbmodem124401 -f test.gcode -v"
+    "dev": "node index.js send -p /dev/tty.usbmodem124401 -f test2.gcode -v"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +21,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^9.4.1",
+    "rxjs": "^7.5.7",
     "serialport": "^10.4.0"
   }
 }
