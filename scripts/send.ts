@@ -1,9 +1,11 @@
-import chalk from 'chalk';
 import { exit } from 'process';
 
-import { Machine } from '../machine.js';
-import { LinesBuffer } from '../linesbuffer.js';
-import { RUN_HOMING_CYCLE, SOFT_RESET } from '../commands.js';
+import chalk from 'chalk';
+import { fromEvent, scan, filter, tap, share } from 'rxjs';
+
+import { Machine } from '../machine';
+import { LinesBuffer } from '../linesbuffer';
+import { RUN_HOMING_CYCLE, SOFT_RESET } from '../commands';
 import {
   isOkRes,
   isWelcomeRes,
@@ -11,10 +13,8 @@ import {
   isMessageRes,
   isAlarmRes,
   isErrorRes
-} from '../responseParsing.js';
-import { validateFile, validatePort, getSerialPort, parseStatusMessage, getArg } from '../utils.js';
-
-import { fromEvent, scan, filter, tap, share } from 'rxjs';
+} from '../responseParsing';
+import { validateFile, validatePort, getSerialPort, parseStatusMessage, getArg } from '../utils';
 
 function parseMsg(line) {
   if (isOkRes(line)) {
@@ -91,7 +91,7 @@ export async function send({ file: filePath, port: portArg, verbose }) {
       tap((line) => {
         console.log(chalk.green('RX::', line));
       }),
-      scan((acc, curr) => Object.assign({}, acc, parseMsg(curr)), {}),
+      scan((acc, curr) => Object.assign({}, acc, parseMsg(curr)), {} as Record<string, string>),
       tap((state) => {
         if (state.killReason || state.isError) {
           startKillSequence(ob$, m.sendCommand, state.killReason || 'unknown reason');

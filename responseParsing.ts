@@ -1,4 +1,4 @@
-import { STATUS, RUN_HOMING_CYCLE } from './commands.js';
+import { STATUS, RUN_HOMING_CYCLE } from './commands';
 
 export function isStatusCmd(cmd) {
   return cmd === STATUS;

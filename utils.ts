@@ -4,8 +4,8 @@ import { stderr, exit, stdout, stdin } from 'process';
 
 import { SerialPort } from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
-import { RUN_HOMING_CYCLE } from './commands.js';
-import { isErrorRes, isAlarmRes, isBlockingMessage } from './responseParsing.js';
+import { RUN_HOMING_CYCLE } from './commands';
+import { isErrorRes, isAlarmRes, isBlockingMessage } from './responseParsing';
 
 function handleError(error) {
   stderr.write(`error: ${error}\n`);
@@ -92,7 +92,7 @@ export function parseStatusMessage(msg) {
   const machineState = categories.shift();
   const a = categories.reduce((acc, c) => {
     const [key, value] = c.split(':');
-    acc[key[0].toLowerCase() + key.slice(1)] = value.split(',').map((c) => parseFloat(c, 10));
+    acc[key[0].toLowerCase() + key.slice(1)] = value.split(',').map((c) => parseFloat(c));
 
     return acc;
   }, {});
@@ -107,9 +107,9 @@ export function isBlockingLine(line) {
   return isAlarmRes(line) || isErrorRes(line) || isBlockingMessage(line);
 }
 
-export function getJobDuration(startTime) {
+export function getJobDuration(startTime: Date) {
   const now = new Date();
-  const seconds = now - startTime;
+  const seconds = now.getTime() - startTime.getTime();
   const result = new Date(seconds).toISOString().slice(11, 19);
 
   return result;

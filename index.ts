@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 
-import { list, send } from './scripts/index.js';
+import { list, send } from './scripts';
 
 async function main() {
   const program = new Command();
