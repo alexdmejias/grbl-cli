@@ -12,7 +12,13 @@ const {
   isAlarmRes,
   isErrorRes
 } = require('../responseParsing');
-const { validateFile, validatePort, getPort, parseStatusMessage } = require('../utils');
+const {
+  validateFile,
+  validatePort,
+  getSerialPort,
+  parseStatusMessage,
+  getArg
+} = require('../utils');
 
 const { fromEvent, scan, filter, tap, share } = require('rxjs');
 
@@ -58,11 +64,14 @@ function startKillSequence(ob$, sendCommand, reason = 'unclear') {
   console.log(chalk.bgRed.bold.white('sending exit command'));
 }
 
-exports.send = async ({ filePath, port, verbose }) => {
+exports.send = async ({ file: filePath, port: portArg, verbose }) => {
   await validateFile(filePath);
+
+  const port = await getArg(portArg);
+
   await validatePort(port);
 
-  const [serialPort, parser] = await getPort(port);
+  const [serialPort, parser] = await getSerialPort(port);
   const m = new Machine({
     port: serialPort,
     verbose

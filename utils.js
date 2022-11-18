@@ -1,7 +1,9 @@
 const fs = require('fs/promises');
+const readline = require('readline');
+const { stderr, exit, stdout, stdin } = require('process');
+
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
-const { stderr, exit } = require('process');
 const { RUN_HOMING_CYCLE } = require('./commands');
 const { isErrorRes, isAlarmRes, isBlockingMessage } = require('./responseParsing');
 
@@ -38,7 +40,42 @@ exports.validatePort = async (portArg) => {
   }
 };
 
-exports.getPort = async (portArg) => {
+exports.getArg = async (portArg) => {
+  let port = portArg;
+
+  if (!port) {
+    const rl = readline.createInterface({
+      input: stdin,
+      output: stdout
+    });
+
+    const availablePorts = await SerialPort.list();
+
+    availablePorts.forEach((port, index) => {
+      stdout.write(`${index + 1}. ${port.path}\n`);
+    });
+
+    port = await new Promise((resolve) => {
+      rl.question('Pick a port? input a number or the full path from the list above: ', (input) => {
+        let a = input;
+        const parsedInput = parseInt(input, 10);
+        if (parsedInput) {
+          a = availablePorts[parsedInput - 1]?.path;
+        }
+
+        console.log(`picked: ${a}`);
+
+        rl.close();
+
+        resolve(a);
+      });
+    });
+
+    return port;
+  }
+};
+
+exports.getSerialPort = async (portArg) => {
   const port = new SerialPort({
     path: portArg,
     baudRate: 115200

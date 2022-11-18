@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node index.js send -p /dev/tty.usbmodem124401 -f test2.gcode -v"
+    "dev": "node index.js send -f test2.gcode -v"
   },
   "author": "",
   "license": "ISC",

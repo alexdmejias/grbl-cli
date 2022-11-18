@@ -17,8 +17,8 @@ async function main() {
   program
     .command('send')
     .description('stream a file')
-    .requiredOption('-f, --file-path <file path>', 'The path of the file to send')
-    .requiredOption('-p, --port <machine port>', 'The port of the machine')
+    .requiredOption('-f, --file <file path>', 'The path of the file to send')
+    .option('-p, --port <machine port>', 'The port of the machine')
     .option('-v, --verbose', 'Verbose mode')
     // TODO pass baud rate
     .action(send);
