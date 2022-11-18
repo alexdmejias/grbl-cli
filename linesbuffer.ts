@@ -49,7 +49,7 @@ class LinesBuffer {
     }
   }
 
-  async readFileAsArr(path) {
+  async readFileAsArr(path: string) {
     return (await readFile(path, 'utf-8')).split('\n');
   }
 

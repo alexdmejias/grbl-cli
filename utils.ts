@@ -2,17 +2,18 @@ import { stat } from 'fs/promises';
 import { createInterface } from 'readline';
 import { stderr, exit, stdout, stdin } from 'process';
 
+import prompt from 'prompt';
 import { SerialPort } from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
 import { RUN_HOMING_CYCLE } from './commands';
 import { isErrorRes, isAlarmRes, isBlockingMessage } from './responseParsing';
 
-function handleError(error) {
+function handleError(error: string) {
   stderr.write(`error: ${error}\n`);
   exit(1);
 }
 
-export async function validateFile(filePathArg) {
+export async function validateFile(filePathArg: string) {
   try {
     const fileStats = await stat(filePathArg);
 
@@ -28,7 +29,7 @@ export async function validateFile(filePathArg) {
   }
 }
 
-export async function validatePort(portArg) {
+export async function validatePort(portArg: string) {
   try {
     const ports = await SerialPort.list();
     const port = ports.find((p) => p.path === portArg);
@@ -40,42 +41,62 @@ export async function validatePort(portArg) {
   }
 }
 
-export async function getArg(portArg) {
+export async function getArg(portArg?: string): Promise<string> {
   let port = portArg;
 
-  if (!port) {
-    const rl = createInterface({
-      input: stdin,
-      output: stdout
+  if (typeof port === undefined) {
+    // const rl = createInterface({
+    //   input: stdin,
+    //   output: stdout
+    // });
+    prompt.start();
+
+    const availablePorts = await (await SerialPort.list()).map((sp) => sp.path);
+
+    availablePorts.forEach((path, index) => {
+      stdout.write(`${index + 1}. ${path}\n`);
     });
 
-    const availablePorts = await SerialPort.list();
+    const { portPathOrNumber } = await prompt.get({
+      properties: {
+        portPathOrNumber: {
+          type: 'string',
+          conform: (value) => {
+            const num = parseInt(value, 10);
+            if (num && num > 0 && num < availablePorts.length) {
+              return true;
+            } else if (availablePorts.includes(value)) {
+              return true;
+            }
 
-    availablePorts.forEach((port, index) => {
-      stdout.write(`${index + 1}. ${port.path}\n`);
-    });
-
-    port = await new Promise((resolve) => {
-      rl.question('Pick a port? input a number or the full path from the list above: ', (input) => {
-        let a = input;
-        const parsedInput = parseInt(input, 10);
-        if (parsedInput) {
-          a = availablePorts[parsedInput - 1]?.path;
+            return false;
+          }
         }
-
-        console.log(`picked: ${a}`);
-
-        rl.close();
-
-        resolve(a);
-      });
+      }
     });
 
-    return port;
+    console.log('!!!!!!!!', portPathOrNumber);
+    // port = await new Promise<string>((resolve) => {
+    //   rl.question('Pick a port? input a number or the full path from the list above: ', (input) => {
+    //     let a = input;
+    //     const parsedInput = parseInt(input, 10);
+    //     if (parsedInput) {
+    //       a = availablePorts[parsedInput - 1]?.path;
+    //     }
+
+    //     console.log(`picked: ${a}`);
+
+    //     rl.close();
+
+    //     resolve(a);
+    //   });
+    // }) as string;
   }
+
+  return port;
 }
 
-export async function getSerialPort(portArg) {
+export async function getSerialPort(portArg: string) {
   const port = new SerialPort({
     path: portArg,
     baudRate: 115200
@@ -86,7 +107,7 @@ export async function getSerialPort(portArg) {
   return [port, parser];
 }
 
-export function parseStatusMessage(msg) {
+export function parseStatusMessage(msg: string) {
   const categories = msg.slice(1, -1).split('|');
 
   const machineState = categories.shift();
@@ -103,7 +124,7 @@ export function parseStatusMessage(msg) {
   };
 }
 
-export function isBlockingLine(line) {
+export function isBlockingLine(line: string) {
   return isAlarmRes(line) || isErrorRes(line) || isBlockingMessage(line);
 }
 
@@ -115,6 +136,6 @@ export function getJobDuration(startTime: Date) {
   return result;
 }
 
-export function getShouldWaitForNextOk(sentLine) {
+export function getShouldWaitForNextOk(sentLine: string) {
   return [RUN_HOMING_CYCLE].includes(sentLine);
 }
