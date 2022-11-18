@@ -1,23 +1,23 @@
-const fs = require('fs/promises');
-const readline = require('readline');
-const { stderr, exit, stdout, stdin } = require('process');
+import { stat } from 'fs/promises';
+import { createInterface } from 'readline';
+import { stderr, exit, stdout, stdin } from 'process';
 
-const { SerialPort } = require('serialport');
-const { ReadlineParser } = require('@serialport/parser-readline');
-const { RUN_HOMING_CYCLE } = require('./commands');
-const { isErrorRes, isAlarmRes, isBlockingMessage } = require('./responseParsing');
+import { SerialPort } from 'serialport';
+import { ReadlineParser } from '@serialport/parser-readline';
+import { RUN_HOMING_CYCLE } from './commands.js';
+import { isErrorRes, isAlarmRes, isBlockingMessage } from './responseParsing.js';
 
 function handleError(error) {
   stderr.write(`error: ${error}\n`);
   exit(1);
 }
 
-exports.validateFile = async (filePathArg) => {
+export async function validateFile(filePathArg) {
   try {
-    const stat = await fs.stat(filePathArg);
+    const fileStats = await stat(filePathArg);
 
     try {
-      if (!stat.isFile()) {
+      if (!fileStats.isFile()) {
         throw new Error('not a file');
       }
     } catch (e) {
@@ -26,9 +26,9 @@ exports.validateFile = async (filePathArg) => {
   } catch (e) {
     handleError(`passed path "${filePathArg}" is not valid`);
   }
-};
+}
 
-exports.validatePort = async (portArg) => {
+export async function validatePort(portArg) {
   try {
     const ports = await SerialPort.list();
     const port = ports.find((p) => p.path === portArg);
@@ -38,13 +38,13 @@ exports.validatePort = async (portArg) => {
   } catch (e) {
     handleError(`desired port "${portArg}" does not exist`);
   }
-};
+}
 
-exports.getArg = async (portArg) => {
+export async function getArg(portArg) {
   let port = portArg;
 
   if (!port) {
-    const rl = readline.createInterface({
+    const rl = createInterface({
       input: stdin,
       output: stdout
     });
@@ -73,9 +73,9 @@ exports.getArg = async (portArg) => {
 
     return port;
   }
-};
+}
 
-exports.getSerialPort = async (portArg) => {
+export async function getSerialPort(portArg) {
   const port = new SerialPort({
     path: portArg,
     baudRate: 115200
@@ -84,9 +84,9 @@ exports.getSerialPort = async (portArg) => {
   const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
 
   return [port, parser];
-};
+}
 
-exports.parseStatusMessage = (msg) => {
+export function parseStatusMessage(msg) {
   const categories = msg.slice(1, -1).split('|');
 
   const machineState = categories.shift();
@@ -101,20 +101,20 @@ exports.parseStatusMessage = (msg) => {
     ...a,
     machineState
   };
-};
+}
 
-exports.isBlockingLine = (line) => {
+export function isBlockingLine(line) {
   return isAlarmRes(line) || isErrorRes(line) || isBlockingMessage(line);
-};
+}
 
-exports.getJobDuration = (startTime) => {
+export function getJobDuration(startTime) {
   const now = new Date();
   const seconds = now - startTime;
   const result = new Date(seconds).toISOString().slice(11, 19);
 
   return result;
-};
+}
 
-exports.getShouldWaitForNextOk = (sentLine) => {
+export function getShouldWaitForNextOk(sentLine) {
   return [RUN_HOMING_CYCLE].includes(sentLine);
-};
+}

@@ -1,8 +1,8 @@
 #! /usr/bin/env node
 
-const { Command } = require('commander');
+import { Command } from 'commander';
 
-const { list, send } = require('./commands/index');
+import { list, send } from './scripts/index.js';
 
 async function main() {
   const program = new Command();

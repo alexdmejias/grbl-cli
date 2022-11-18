@@ -1,7 +1,7 @@
-const fs = require('fs/promises');
+import { readFile } from 'fs/promises';
 
-const { exit } = require('process');
-const { isComment } = require('./responseParsing');
+import { exit } from 'process';
+import { isComment } from './responseParsing.js';
 
 class LinesBuffer {
   constructor({ initCommands = [], endCommands = [], files }) {
@@ -32,12 +32,12 @@ class LinesBuffer {
       console.log('!!!!!!!!', 'TODO');
       exit(1);
     } else {
-      return this.readFile(this.files);
+      return this.readFileAsArr(this.files);
     }
   }
 
-  async readFile(path) {
-    return (await fs.readFile(path, 'utf-8')).split('\n');
+  async readFileAsArr(path) {
+    return (await readFile(path, 'utf-8')).split('\n');
   }
 
   peek(n = 0) {
@@ -72,4 +72,5 @@ class LinesBuffer {
   }
 }
 
-exports.LinesBuffer = LinesBuffer;
+const _LinesBuffer = LinesBuffer;
+export { _LinesBuffer as LinesBuffer };

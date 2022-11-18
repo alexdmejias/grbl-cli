@@ -1,26 +1,20 @@
-const chalk = require('chalk');
-const { exit } = require('process');
+import chalk from 'chalk';
+import { exit } from 'process';
 
-const { Machine } = require('../machine');
-const { LinesBuffer } = require('../linesbuffer');
-const { RUN_HOMING_CYCLE, SOFT_RESET } = require('../commands');
-const {
+import { Machine } from '../machine.js';
+import { LinesBuffer } from '../linesbuffer.js';
+import { RUN_HOMING_CYCLE, SOFT_RESET } from '../commands.js';
+import {
   isOkRes,
   isWelcomeRes,
   isStatusRes,
   isMessageRes,
   isAlarmRes,
   isErrorRes
-} = require('../responseParsing');
-const {
-  validateFile,
-  validatePort,
-  getSerialPort,
-  parseStatusMessage,
-  getArg
-} = require('../utils');
+} from '../responseParsing.js';
+import { validateFile, validatePort, getSerialPort, parseStatusMessage, getArg } from '../utils.js';
 
-const { fromEvent, scan, filter, tap, share } = require('rxjs');
+import { fromEvent, scan, filter, tap, share } from 'rxjs';
 
 function parseMsg(line) {
   if (isOkRes(line)) {
@@ -64,7 +58,7 @@ function startKillSequence(ob$, sendCommand, reason = 'unclear') {
   console.log(chalk.bgRed.bold.white('sending exit command'));
 }
 
-exports.send = async ({ file: filePath, port: portArg, verbose }) => {
+export async function send({ file: filePath, port: portArg, verbose }) {
   await validateFile(filePath);
 
   const port = await getArg(portArg);
@@ -131,4 +125,4 @@ exports.send = async ({ file: filePath, port: portArg, verbose }) => {
         startKillSequence(ob$, m.sendCommand, 'COMPLETE');
       }
     });
-};
+}

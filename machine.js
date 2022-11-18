@@ -1,9 +1,9 @@
-const { stderr, stdout } = require('process');
+import { stderr, stdout } from 'process';
 
-const chalk = require('chalk');
+import chalk from 'chalk';
 
-const { ALARM_DICTIONARY, ERROR_DICTIONARY, GRBL_SETTINGS } = require('./dictionaries');
-const {
+import { ALARM_DICTIONARY, ERROR_DICTIONARY, GRBL_SETTINGS } from './dictionaries.js';
+import {
   isStatusCmd,
   isOkRes,
   isGCodeDoneRes,
@@ -11,9 +11,9 @@ const {
   isStatusRes,
   isErrorRes,
   isAlarmRes
-} = require('./responseParsing');
-const { RUN_HOMING_CYCLE, KILL_ALARM_LOCK } = require('./commands');
-const { parseStatusMessage } = require('./utils');
+} from './responseParsing.js';
+import { RUN_HOMING_CYCLE, KILL_ALARM_LOCK } from './commands.js';
+import { parseStatusMessage } from './utils.js';
 
 const commandPairings = {
   [RUN_HOMING_CYCLE]: {
@@ -98,4 +98,5 @@ class Machine {
   //   }
 }
 
-exports.Machine = Machine;
+const _Machine = Machine;
+export { _Machine as Machine };

@@ -1,47 +1,47 @@
-const { STATUS, RUN_HOMING_CYCLE } = require('./commands');
+import { STATUS, RUN_HOMING_CYCLE } from './commands.js';
 
-exports.isStatusCmd = (cmd) => {
+export function isStatusCmd(cmd) {
   return cmd === STATUS;
-};
+}
 
-exports.isHomingCmd = (cmd) => {
+export function isHomingCmd(cmd) {
   return cmd === RUN_HOMING_CYCLE;
-};
+}
 
-exports.isComment = (cmd) => {
+export function isComment(cmd) {
   return [';', '('].includes(cmd.trim()[0]);
-};
+}
 
-exports.isWelcomeRes = (line) => {
+export function isWelcomeRes(line) {
   return line === `Grbl 1.1h ['$' for help]`;
-};
+}
 
-exports.isOkRes = (line) => {
+export function isOkRes(line) {
   return line === 'ok';
-};
+}
 
-exports.isGCodeDoneRes = (line) => {
+export function isGCodeDoneRes(line) {
   return line === '[MSG:Pgm End]';
-};
+}
 
-exports.isMessageRes = (line) => {
+export function isMessageRes(line) {
   return line.slice(0, 5) === '[MSG:' && line.at(-1) === ']';
-};
+}
 
-exports.isStatusRes = (line) => {
+export function isStatusRes(line) {
   return line[0] === '<' && line.slice(-1) === '>';
-};
+}
 
-exports.isErrorRes = (line) => {
+export function isErrorRes(line) {
   return line.slice(0, 5) === 'error';
-};
+}
 
-exports.isAlarmRes = (line) => {
+export function isAlarmRes(line) {
   return line.slice(0, 5) === 'ALARM';
-};
+}
 
-exports.isBlockingMessage = (line) => {
+export function isBlockingMessage(line) {
   return [/* `'$H'|'$X' to unlock`, */ `Reset to continue`, `Pgm End`, `Check Limits`].includes(
     line.slice(1, -1).split(':')[1]
   );
-};
+}

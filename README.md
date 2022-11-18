@@ -31,8 +31,7 @@ A WIP CLI way to send files to your GRBL machine. Clone, `npm install`, and run 
 - global npm module and/or executables
 - migrate to TS/Deno
 - accept input from STDIN
-- wait timer
+- wait timer for welcome message
 - multiple files
-- parse status
+- parse status messages
 - flag to toggle "check g-code mode" https://github.com/gnea/grbl/blob/master/doc/markdown/interface.md#g-code-error-handling
-- interactive mode incase no port is sent

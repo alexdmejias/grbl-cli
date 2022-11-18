@@ -1,4 +1,4 @@
-exports.ALARM_DICTIONARY = {
+export const ALARM_DICTIONARY = {
   1: 'Hard limit triggered. Machine position is likely lost due to sudden and immediate halt. Re-homing is highly recommended.',
   2: 'G-code motion target exceeds machine travel. Machine position safely retained. Alarm may be unlocked.',
   3: 'Reset while in motion. Grbl cannot guarantee position. Lost steps are likely. Re-homing is highly recommended.',
@@ -10,7 +10,7 @@ exports.ALARM_DICTIONARY = {
   9: 'Homing fail. Could not find limit switch within search distance. Defined as 1.5 * max_travel on search and 5 * pulloff on locate phases.'
 };
 
-exports.ERROR_DICTIONARY = {
+export const ERROR_DICTIONARY = {
   1: 'G-code words consist of a letter and a value. Letter was not found.',
   2: 'Numeric value format is not valid or missing an expected value.',
   3: "Grbl '$' system command was not recognized or supported.",
@@ -49,7 +49,7 @@ exports.ERROR_DICTIONARY = {
   38: 'Tool number greater than max supported value.|'
 };
 
-exports.GRBL_SETTINGS = {
+export const GRBL_SETTINGS = {
   0: 'Step pulse time, microseconds',
   1: 'Step idle delay, milliseconds',
   2: 'Step pulse invert, mask',
