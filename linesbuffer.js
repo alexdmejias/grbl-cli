@@ -1,23 +1,10 @@
 import { readFile } from 'fs/promises';
 
 import { exit } from 'process';
-import { isComment } from './responseParsing';
+import { isComment } from './responseParsing.js';
 
 class LinesBuffer {
-  initCommands: string[];
-  endCommands: string[];
-  files: any;
-  buffer: string[];
-
-  constructor({
-    initCommands = [],
-    endCommands = [],
-    files
-  }: {
-    initCommands: string[];
-    endCommands: string[];
-    files: string | string[];
-  }) {
+  constructor({ initCommands = [], endCommands = [], files }) {
     this.initCommands = initCommands;
     this.endCommands = endCommands;
     this.files = files;
@@ -81,7 +68,7 @@ class LinesBuffer {
   }
 
   clearBuffer() {
-    this.buffer = [];
+    this.buffer = undefined;
   }
 }
 

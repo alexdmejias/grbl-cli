@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node index.js send -f test2.gcode -v"
   },
+  "type": "module",
   "author": "",
   "license": "ISC",
   "bin": {
@@ -19,8 +20,7 @@
     "prettier": "^2.7.1"
   },
   "dependencies": {
-    "@types/node": "^18.11.9",
-    "chalk": "^4",
+    "chalk": "^5.1.2",
     "commander": "^9.4.1",
     "rxjs": "^7.5.7",
     "serialport": "^10.4.0"

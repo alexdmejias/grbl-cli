@@ -1,7 +1,19 @@
+import { stderr, stdout } from 'process';
+
 import chalk from 'chalk';
 
-import { isStatusCmd } from './responseParsing';
-import { RUN_HOMING_CYCLE } from './commands';
+import { ALARM_DICTIONARY, ERROR_DICTIONARY, GRBL_SETTINGS } from './dictionaries.js';
+import {
+  isStatusCmd,
+  isOkRes,
+  isGCodeDoneRes,
+  isWelcomeRes,
+  isStatusRes,
+  isErrorRes,
+  isAlarmRes
+} from './responseParsing.js';
+import { RUN_HOMING_CYCLE, KILL_ALARM_LOCK } from './commands.js';
+import { parseStatusMessage } from './utils.js';
 
 const commandPairings = {
   [RUN_HOMING_CYCLE]: {
@@ -11,14 +23,11 @@ const commandPairings = {
 };
 
 class Machine {
-  port: any;
-  verbose: Boolean;
-  machineState: {};
-  pendingSideEffects: any;
-
-  constructor({ port, verbose }) {
+  constructor({ port, verbose, initCommands, endCommands }) {
     this.port = port;
     this.verbose = verbose;
+    this.initCommands = initCommands;
+    this.endCommands = endCommands;
 
     this.machineState = {};
     this.pendingSideEffects;
@@ -44,6 +53,12 @@ class Machine {
 
   hasPendingSideEffects() {
     return !!this.pendingSideEffects;
+  }
+
+  resetState() {}
+
+  removeLineFromBuffer() {
+    this.fileBuffer.shift();
   }
 
   setMachineState(newState = {}) {
