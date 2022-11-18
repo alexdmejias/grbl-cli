@@ -1,7 +1,7 @@
 import { exit } from 'process';
 
 import chalk from 'chalk';
-import { fromEvent, scan, filter, tap, share, Observable } from 'rxjs';
+import { fromEvent, scan, filter, tap, share } from 'rxjs';
 
 import { Machine } from '../machine';
 import { LinesBuffer } from '../linesbuffer';
@@ -16,7 +16,7 @@ import {
 } from '../responseParsing';
 import { validateFile, validatePort, getSerialPort, parseStatusMessage, getArg } from '../utils';
 
-function parseMsg(line: string) {
+function parseMsg(line) {
   if (isOkRes(line)) {
     let a = { isOk: true };
     return a;
@@ -47,30 +47,18 @@ function parseMsg(line: string) {
   }
 }
 
-function startKillSequence(
-  ob$: Observable<unknown>,
-  sendCommand: (cmd: string) => void,
-  reason = 'unclear'
-) {
+function startKillSequence(ob$, sendCommand, reason = 'unclear') {
   console.log(chalk.bgRed.bold.white('self destruction sequence because:', reason));
 
   exit(0);
   console.log(chalk.bgRed.bold.white('sending soft reset command'));
   // sendCommand(SOFT_RESET);
   console.log(chalk.bgRed.bold.white('unsubscribing from oberserver'));
-  // ob$.unsubscribe();
+  ob$.unsubscribe();
   console.log(chalk.bgRed.bold.white('sending exit command'));
 }
 
-export async function send({
-  file: filePath,
-  port: portArg,
-  verbose
-}: {
-  file: string;
-  port: string | undefined;
-  verbose: boolean;
-}) {
+export async function send({ file: filePath, port: portArg, verbose }) {
   await validateFile(filePath);
 
   const port = await getArg(portArg);
@@ -106,9 +94,9 @@ export async function send({
       scan((acc, curr) => Object.assign({}, acc, parseMsg(curr)), {} as Record<string, string>),
       tap((state) => {
         if (state.killReason || state.isError) {
-          // startKillSequence(ob$, m.sendCommand, state.killReason || 'unknown reason');
+          startKillSequence(ob$, m.sendCommand, state.killReason || 'unknown reason');
         } else if (lb.done()) {
-          // startKillSequence(ob$, m.sendCommand, 'DONE');
+          startKillSequence(ob$, m.sendCommand, 'DONE');
         }
       }),
       tap((parsedLine) => {
@@ -129,9 +117,7 @@ export async function send({
           startKillSequence(ob$, m.sendCommand, '1');
         } else {
           const gcodeToSend = lb.advance();
-          if (gcodeToSend) {
-            m.sendCommand(gcodeToSend);
-          }
+          m.sendCommand(gcodeToSend);
         }
       },
       error: (error) => startKillSequence(ob$, m.sendCommand, `error: ${error}`),

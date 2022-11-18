@@ -2,7 +2,6 @@ import chalk from 'chalk';
 
 import { isStatusCmd } from './responseParsing';
 import { RUN_HOMING_CYCLE } from './commands';
-import { SerialPort, ReadlineParser } from 'serialport';
 
 const commandPairings = {
   [RUN_HOMING_CYCLE]: {
@@ -12,12 +11,12 @@ const commandPairings = {
 };
 
 class Machine {
-  port: SerialPort | ReadlineParser;
+  port: any;
   verbose: Boolean;
   machineState: {};
   pendingSideEffects: any;
 
-  constructor({ port, verbose }: { port: SerialPort | ReadlineParser; verbose: boolean }) {
+  constructor({ port, verbose }) {
     this.port = port;
     this.verbose = verbose;
 
@@ -25,7 +24,7 @@ class Machine {
     this.pendingSideEffects;
   }
 
-  sendCommand(command: string) {
+  sendCommand(command) {
     if (this.verbose && !isStatusCmd(command)) console.log(chalk.red('MACHINE::TX::', command));
 
     this.port.write(`${command}\n`);
